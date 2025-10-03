@@ -89,23 +89,6 @@ struct ImageEditorView: View {
                 }
                 .clipped()
 
-                // 马赛克强度选择
-                VStack {
-                    Text("马赛克强度")
-                        .font(.headline)
-
-                    Picker("强度", selection: $mosaicProcessor.currentIntensity) {
-                        ForEach(MosaicProcessor.MosaicIntensity.allCases, id: \.self) { intensity in
-                            Text(intensity.displayName).tag(intensity)
-                        }
-                    }
-                    .pickerStyle(SegmentedPickerStyle())
-                    .onChange(of: mosaicProcessor.currentIntensity) { _, _ in
-                        refreshProcessedImage()
-                    }
-                }
-                .padding()
-
                 Spacer()
             }
             .navigationTitle("图片编辑")

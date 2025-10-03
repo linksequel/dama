@@ -15,16 +15,10 @@ class MosaicProcessor: ObservableObject {
 
     // 马赛克强度枚举
     enum MosaicIntensity: Int, CaseIterable {
-        case low = 8      // 低强度 - 8x8像素块
-        case medium = 12  // 中强度 - 12x12像素块
         case high = 20    // 高强度 - 20x20像素块
 
         var displayName: String {
-            switch self {
-            case .low: return "轻度"
-            case .medium: return "中度"
-            case .high: return "重度"
-            }
+            return "模糊"
         }
     }
 
@@ -42,7 +36,7 @@ class MosaicProcessor: ObservableObject {
     }
 
     @Published var mosaicRegions: [MosaicRegion] = []
-    @Published var currentIntensity: MosaicIntensity = .medium
+    @Published var currentIntensity: MosaicIntensity = .high
 
     // 对指定区域应用马赛克效果
     func applyMosaic(to image: UIImage, regions: [MosaicRegion]) -> UIImage? {
@@ -155,7 +149,7 @@ class MosaicProcessor: ObservableObject {
     }
 
     // 添加马赛克区域
-    func addMosaicRegion(_ region: CGRect, intensity: MosaicIntensity = .medium) {
+    func addMosaicRegion(_ region: CGRect, intensity: MosaicIntensity = .high) {
         let mosaicRegion = MosaicRegion(rect: region, intensity: intensity)
         mosaicRegions.append(mosaicRegion)
     }

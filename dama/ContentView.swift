@@ -228,7 +228,7 @@ struct ContentView: View {
 
                 // 添加检测到的敏感区域
                 for region in regions {
-                    mosaicProcessor.addMosaicRegion(region, intensity: .medium)
+                    mosaicProcessor.addMosaicRegion(region, intensity: .high)
                 }
 
                 // 应用马赛克处理

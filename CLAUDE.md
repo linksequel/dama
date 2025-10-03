@@ -31,7 +31,7 @@ dama/
 │   ├── damaApp.swift        # App entry point (@main)
 │   ├── ContentView.swift    # Main SwiftUI view
 │   └── Assets.xcassets/     # App icons and assets
-├── damaTests/               # Unit tests
+├── damaTests/               # Unit3 tests
 ├── damaUITests/             # UI tests
 └── dama.xcodeproj/          # Xcode project configuration
 ```
