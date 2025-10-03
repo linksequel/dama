@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Photos
 
 // 图像编辑视图 - 支持手动框选和实时预览
 struct ImageEditorView: View {
@@ -19,6 +20,8 @@ struct ImageEditorView: View {
     @State private var isSelecting = false
     @State private var startPoint: CGPoint = .zero
     @State private var hasAutoDetected = false  // 跟踪是否已执行自动检测
+    @State private var showingSaveAlert = false  // 显示保存结果提示
+    @State private var saveAlertMessage = ""  // 保存结果消息
     @Environment(\.presentationMode) var presentationMode
 
     // 初始化器
@@ -34,29 +37,46 @@ struct ImageEditorView: View {
         NavigationView {
             VStack {
                 // 工具栏
-                HStack {
+                HStack(spacing: 8) {
                     Button("自动检测") {
                         autoDetectSensitiveAreas()
                     }
-                    .buttonStyle(.borderedProminent)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+                    .background(hasAutoDetected ? Color.gray : Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
                     .disabled(hasAutoDetected)
-
-                    Spacer()
 
                     Button(isManualMode ? "完成框选" : "手动框选") {
                         isManualMode.toggle()
                     }
-                    .buttonStyle(.bordered)
-
-                    Spacer()
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+                    .background(isManualMode ? Color.blue : Color.gray.opacity(0.2))
+                    .foregroundColor(isManualMode ? .white : .primary)
+                    .cornerRadius(10)
 
                     Button("清除全部") {
                         clearAllMosaics()
                     }
-                    .buttonStyle(.bordered)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+                    .background(Color.red.opacity(0.1))
                     .foregroundColor(.red)
+                    .cornerRadius(10)
+
+                    Button("保存") {
+                        saveToPhotoLibrary()
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+                    .background(Color.green.opacity(0.1))
+                    .foregroundColor(.green)
+                    .cornerRadius(10)
                 }
-                .padding()
+                .padding(.horizontal)
+                .padding(.vertical, 8)
 
                 // 图像显示区域
                 GeometryReader { geometry in
@@ -129,6 +149,11 @@ struct ImageEditorView: View {
         .onChange(of: mosaicProcessor.mosaicRegions) { _, _ in
             refreshProcessedImage()
         }
+        .alert("提示", isPresented: $showingSaveAlert) {
+            Button("确定", role: .cancel) { }
+        } message: {
+            Text(saveAlertMessage)
+        }
     }
 
     // 自动检测敏感区域
@@ -172,6 +197,42 @@ struct ImageEditorView: View {
         // 基于当前显示的图片应用新的马赛克
         let baseImage = processedImage ?? initialImage
         processedImage = mosaicProcessor.applyMosaic(to: baseImage, regions: mosaicProcessor.mosaicRegions)
+    }
+
+    // 保存到相册
+    private func saveToPhotoLibrary() {
+        guard let imageToSave = processedImage else {
+            saveAlertMessage = "没有可保存的图片"
+            showingSaveAlert = true
+            return
+        }
+
+        // 检查相册权限
+        PHPhotoLibrary.requestAuthorization { status in
+            DispatchQueue.main.async {
+                switch status {
+                case .authorized, .limited:
+                    // 有权限，保存图片
+                    UIImageWriteToSavedPhotosAlbum(imageToSave, nil, nil, nil)
+                    saveAlertMessage = "图片已保存到相册"
+                    showingSaveAlert = true
+                    print("图片已成功保存到相册")
+
+                case .denied, .restricted:
+                    saveAlertMessage = "没有相册访问权限，请在设置中允许访问相册"
+                    showingSaveAlert = true
+                    print("相册访问权限被拒绝")
+
+                case .notDetermined:
+                    saveAlertMessage = "请允许访问相册"
+                    showingSaveAlert = true
+
+                @unknown default:
+                    saveAlertMessage = "保存失败"
+                    showingSaveAlert = true
+                }
+            }
+        }
     }
 }
 
