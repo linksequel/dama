@@ -22,7 +22,7 @@ struct ContentView: View {
         NavigationView {
             VStack(spacing: 20) {
                 // 标题区域
-                Text("打码页")
+                Text("打码APP")
                     .font(.largeTitle)
                     .fontWeight(.bold)
                     .foregroundColor(.primary)
@@ -109,19 +109,32 @@ struct ContentView: View {
                                 // 显示处理后的图像或原始图像
                                 let displayImage = processedImages[index] ?? image
 
-                                Image(uiImage: displayImage)
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .frame(width: 150, height: 180)
-                                    .cornerRadius(8)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                                    )
-                                    .onTapGesture {
-                                        selectedImageIndex = index
-                                        showingImageEditor = true
+                                ZStack(alignment: .topTrailing) {
+                                    Image(uiImage: displayImage)
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                        .frame(width: 150, height: 180)
+                                        .cornerRadius(8)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                                        )
+                                        .onTapGesture {
+                                            selectedImageIndex = index
+                                            showingImageEditor = true
+                                        }
+
+                                    // 删除按钮
+                                    Button(action: {
+                                        removeImage(at: index)
+                                    }) {
+                                        Image(systemName: "xmark.circle.fill")
+                                            .font(.title3)
+                                            .foregroundColor(.white)
+                                            .background(Circle().fill(Color.red))
                                     }
+                                    .padding(8)
+                                }
 
                                 // 图片状态指示
                                 Text(processedImages[index] != nil ? "已处理" : "点击编辑")
@@ -239,6 +252,40 @@ struct ContentView: View {
         mosaicProcessor.clearAllRegions()
         processedImages = [:]
         print("清除所有马赛克区域")
+    }
+
+    // 删除指定索引的图片
+    private func removeImage(at index: Int) {
+        guard index < loadedImages.count else { return }
+
+        // 删除原图
+        loadedImages.remove(at: index)
+
+        // 删除对应的selectedImages项
+        if index < selectedImages.count {
+            selectedImages.remove(at: index)
+        }
+
+        // 重建processedImages字典，更新索引
+        var newProcessedImages: [Int: UIImage] = [:]
+        for (oldIndex, image) in processedImages {
+            if oldIndex < index {
+                // 索引小于删除位置的保持不变
+                newProcessedImages[oldIndex] = image
+            } else if oldIndex > index {
+                // 索引大于删除位置的需要减1
+                newProcessedImages[oldIndex - 1] = image
+            }
+            // oldIndex == index 的图片被删除，不加入新字典
+        }
+        processedImages = newProcessedImages
+
+        // 如果删除的是当前选中的图片，调整选中索引
+        if selectedImageIndex >= loadedImages.count && loadedImages.count > 0 {
+            selectedImageIndex = loadedImages.count - 1
+        }
+
+        print("已删除第 \(index + 1) 张图片")
     }
 }
 
