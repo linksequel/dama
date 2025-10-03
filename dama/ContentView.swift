@@ -176,23 +176,21 @@ struct ContentView: View {
                 VStack(spacing: 8) {
                     Image(systemName: "mosaic")
                         .font(.title2)
-                        .foregroundColor(.white)
 
                     Text("一键打码")
                         .font(.headline)
                         .fontWeight(.medium)
-                        .foregroundColor(.white)
                 }
+                .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
                 .frame(height: 80)
                 .background(
                     RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.blue)
+                        .fill(loadedImages.isEmpty ? Color.gray : Color.blue)
                 )
             }
             .buttonStyle(PlainButtonStyle())
             .disabled(loadedImages.isEmpty)
-            .opacity(loadedImages.isEmpty ? 0.5 : 1.0)
 
             // 取消打码按钮
             Button(action: {
@@ -201,23 +199,21 @@ struct ContentView: View {
                 VStack(spacing: 8) {
                     Image(systemName: "eraser")
                         .font(.title2)
-                        .foregroundColor(.white)
 
                     Text("取消打码")
                         .font(.headline)
                         .fontWeight(.medium)
-                        .foregroundColor(.white)
                 }
+                .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
                 .frame(height: 80)
                 .background(
                     RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.red)
+                        .fill(processedImages.count == 0 ? Color.gray : Color.red)
                 )
             }
             .buttonStyle(PlainButtonStyle())
             .disabled(processedImages.count == 0)
-            .opacity(processedImages.count == 0 ? 0.5 : 1.0)
         }
         .padding(.horizontal)
     }
