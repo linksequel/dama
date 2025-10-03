@@ -9,14 +9,26 @@ import SwiftUI
 
 // 图像编辑视图 - 支持手动框选和实时预览
 struct ImageEditorView: View {
-    let originalImage: UIImage
+    let originalImage: UIImage  // 真正的原图（未打码）
+    let initialImage: UIImage   // 初始显示的图片（可能已打码）
+    let onComplete: (UIImage) -> Void  // 完成后的回调
     @StateObject private var mosaicProcessor = MosaicProcessor()
     @State private var processedImage: UIImage?
     @State private var isManualMode = false
     @State private var currentSelection: CGRect? = nil
     @State private var isSelecting = false
     @State private var startPoint: CGPoint = .zero
+    @State private var hasAutoDetected = false  // 跟踪是否已执行自动检测
     @Environment(\.presentationMode) var presentationMode
+
+    // 初始化器
+    init(originalImage: UIImage, currentImage: UIImage? = nil, onComplete: @escaping (UIImage) -> Void) {
+        self.originalImage = originalImage
+        self.initialImage = currentImage ?? originalImage
+        self.onComplete = onComplete
+        // 设置初始的processedImage
+        _processedImage = State(initialValue: currentImage ?? originalImage)
+    }
 
     var body: some View {
         NavigationView {
@@ -27,6 +39,7 @@ struct ImageEditorView: View {
                         autoDetectSensitiveAreas()
                     }
                     .buttonStyle(.borderedProminent)
+                    .disabled(hasAutoDetected)
 
                     Spacer()
 
@@ -103,15 +116,15 @@ struct ImageEditorView: View {
 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("完成") {
-                        // TODO: 保存处理后的图像
+                        // 将处理后的图像传回
+                        if let finalImage = processedImage {
+                            onComplete(finalImage)
+                        }
                         presentationMode.wrappedValue.dismiss()
                     }
                     .fontWeight(.semibold)
                 }
             }
-        }
-        .onAppear {
-            processedImage = originalImage
         }
         .onChange(of: mosaicProcessor.mosaicRegions) { _, _ in
             refreshProcessedImage()
@@ -120,11 +133,15 @@ struct ImageEditorView: View {
 
     // 自动检测敏感区域
     private func autoDetectSensitiveAreas() {
-        mosaicProcessor.detectSensitiveInfo(in: originalImage) { regions in
+        // 基于当前显示的图片进行检测
+        let imageToDetect = processedImage ?? initialImage
+        mosaicProcessor.detectSensitiveInfo(in: imageToDetect) { regions in
             for region in regions {
                 mosaicProcessor.addMosaicRegion(region, intensity: mosaicProcessor.currentIntensity)
             }
         }
+        // 标记已执行过自动检测
+        hasAutoDetected = true
     }
 
     // 添加马赛克区域
@@ -136,6 +153,8 @@ struct ImageEditorView: View {
     private func clearAllMosaics() {
         mosaicProcessor.clearAllRegions()
         processedImage = originalImage
+        // 重置自动检测状态，允许再次执行
+        hasAutoDetected = false
     }
 
     // 切换区域状态
@@ -146,11 +165,13 @@ struct ImageEditorView: View {
     // 刷新处理后的图像
     private func refreshProcessedImage() {
         guard !mosaicProcessor.mosaicRegions.isEmpty else {
-            processedImage = originalImage
+            processedImage = initialImage
             return
         }
 
-        processedImage = mosaicProcessor.applyMosaic(to: originalImage, regions: mosaicProcessor.mosaicRegions)
+        // 基于当前显示的图片应用新的马赛克
+        let baseImage = processedImage ?? initialImage
+        processedImage = mosaicProcessor.applyMosaic(to: baseImage, regions: mosaicProcessor.mosaicRegions)
     }
 }
 
@@ -242,5 +263,5 @@ struct RegionIndicator: View {
 }
 
 #Preview {
-    ImageEditorView(originalImage: UIImage(systemName: "photo")!)
+    ImageEditorView(originalImage: UIImage(systemName: "photo")!) { _ in }
 }
